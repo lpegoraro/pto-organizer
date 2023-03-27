@@ -1,0 +1,251 @@
+openapi: "3.0.2"
+info:
+  title: PTO Organizer
+  version: "1.0"
+paths:
+  /register:
+    post:
+      summary: Register a new team
+      operationId: "auth.create_team"
+      requestBody:
+        description: Team form request
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamCreateRequest"
+      tags:
+        - "Teams"
+      responses:
+        '201':
+          description: Created
+  /secure/password:
+    post:
+      tags:
+        - "Users"
+      summary: Creates an password
+      operationId: "auth.create_password"
+      requestBody:
+        description: Password creation
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordCreateRequest"
+      responses:
+        '200':
+          description: Created password successfully
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: User not found
+        '498':
+          description: Token expired/invalid
+
+  /team/{teamId}:
+    get:
+      security:
+        - members:
+            - read:ptos
+      summary: Get the team PTOs per week
+      operationId: "team.show_team_pto"
+      parameters:
+        - name: year
+          in: query
+          description: Filter for year
+          example: 2023
+          schema:
+            type: integer
+        - name: startingWeek
+          in: query
+          example: 1
+          description: Week Number to start the search
+          schema:
+            type: integer
+        - name: endingWeek
+          in: query
+          example: 52
+          description: Week Number to end the search
+          schema:
+            type: integer
+        - name: email
+          description: Week Number to end the search
+          in: query
+          example: wile.e.coyote@acme.com
+          schema:
+            type: string
+        - name: teamId
+          in: path
+          example: roadrunner_cartoon
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of team's PTO days organized
+        '404':
+          description: Not found team
+      tags:
+        - "PTO"
+  /team/{teamId}/user:
+    post:
+      summary: Invite new user for team
+      operationId: "team.create_user"
+      requestBody:
+        description: User for new team request
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserCreateRequest"
+      responses:
+        '201':
+          description: Created
+      tags:
+        - "Users"
+      security:
+        - allowedRoles:
+            - write:moderatorpto
+            - write:adminpto
+  /team/{teamId}/{userId}/pto:
+    post:
+      summary: Create new PTO entry
+      operationId: "member.create_pto"
+      parameters:
+        - name: x-token
+          description: JWT Token
+          in: header
+          required: false
+          schema:
+            type: string
+      requestBody:
+        description: PTO Entry
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PtoEntryRequest"
+      responses:
+        '200':
+          description: Ok
+        '409':
+          description: Conflict
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+        '400':
+          description: Bad Request
+    put:
+      summary: Updates PTO entry
+      operationId: "member.update_pto"
+      parameters:
+        - name: x-token
+          description: JWT Token
+          in: header
+          required: false
+          schema:
+            type: string
+      requestBody:
+        description: PTO Entry
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PtoEntryRequest"
+      responses:
+        '200':
+          description: Ok
+        '409':
+          description: Conflict
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+        '400':
+          description: Bad Request
+    delete:
+      summary: Removes PTO entry
+      operationId: "member.delete_pto"
+      parameters:
+        - name: x-token
+          description: JWT Token
+          in: header
+          required: false
+          schema:
+            type: string
+      requestBody:
+        description: PTO Entry
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PtoEntryRequest"
+      responses:
+        '200':
+          description: Ok
+        '409':
+          description: Conflict
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not found
+        '400':
+          description: Bad Request
+components:
+  schemas:
+    TeamCreateRequest:
+      type: object
+      description: Team creation request, this will also create a new user as team administrator role
+      properties:
+        team:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: e-mail
+    UserCreateRequest:
+      type: object
+      description: User creation form
+      properties:
+        team_id:
+          type: string
+        first_name:
+          type: string
+        last_name:
+          type: string
+        email:
+          type: string
+          format: e-mail
+        role:
+          type: string
+          enum:
+            - administrator
+            - moderator
+            - member
+    PasswordCreateRequest:
+      type: object
+      description: Password Create request
+      properties:
+        password:
+          type: string
+          description: user's new password
+    PtoEntryRequest:
+      type: object
+      description: Pto Entry Request
+      properties:
+        year:
+          type: integer
+        dates:
+          type: array
+          items:
+            type: string
+  securitySchemes:
+    allowedRoles:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: /oauth/authorize
+          scopes:
+            write:selfpto: modifies self pto
+            write:moderatorpto: modifies other members pto
+            write:adminpto: modifieds other moderators pto
