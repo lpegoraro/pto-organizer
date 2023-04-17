@@ -123,6 +123,8 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/PtoEntryRequest"
+      tags:
+        - "PTO"
       responses:
         '200':
           description: Ok
@@ -150,6 +152,8 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/PtoEntryRequest"
+      tags:
+        - "PTO"
       responses:
         '200':
           description: Ok
@@ -177,6 +181,8 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/PtoEntryRequest"
+      tags:
+        - "PTO"
       responses:
         '200':
           description: Ok
